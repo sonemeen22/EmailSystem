@@ -1,21 +1,31 @@
 package com.emailsystem.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
+
+    @Autowired
+    private DataSource dataSource;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -23,31 +33,55 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Lambda 方式配置 CORS
-                .csrf(csrf -> csrf.disable()) // Lambda 方式禁用 CSRF
-                .authorizeHttpRequests(authz -> authz // 使用 authorizeHttpRequests 代替 authorizeRequests
-                        .requestMatchers("/api/auth/**").permitAll() // 使用 requestMatchers 代替 antMatchers
-                        .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
-                )
-                .httpBasic(httpBasic -> {}); // Lambda 方式配置 HTTP Basic
+    public UserDetailsService userDetailsService() {
+        JdbcUserDetailsManager userDetailsManager = new JdbcUserDetailsManager(dataSource);
 
-        return http.build();
+        // 自定义查询语句
+        userDetailsManager.setUsersByUsernameQuery(
+                "SELECT username, password, status as enabled FROM users WHERE username = ?");
+        userDetailsManager.setAuthoritiesByUsernameQuery(
+                "SELECT username, 'ROLE_USER' as authority FROM users WHERE username = ?");
+
+        return userDetailsManager;
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*")); // 使用 setAllowedOriginPatterns
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService());
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/static/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginProcessingUrl("/api/auth/login")
+                        .usernameParameter("username")
+                        .passwordParameter("password")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                )
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> {}) // 启用 CORS，使用默认配置或自定义配置
+                .authenticationProvider(authenticationProvider());
+
+        return http.build();
     }
 }

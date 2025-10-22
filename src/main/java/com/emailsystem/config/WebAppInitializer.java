@@ -9,12 +9,14 @@ public class WebAppInitializer extends AbstractAnnotationConfigDispatcherServlet
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class[] { AppConfig.class, SecurityConfig.class };
+        // 返回空数组，所有配置都在 AppConfig 中
+        return null;
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class[] { WebMvcConfig.class };
+        // 只返回 AppConfig 类，所有配置都在这里
+        return new Class[] { AppConfig.class };
     }
 
     @Override
