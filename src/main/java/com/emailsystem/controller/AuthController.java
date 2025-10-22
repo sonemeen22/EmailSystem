@@ -37,10 +37,17 @@ public class AuthController {
             User user = userOpt.get();
             logger.info("用户登录成功: {} (ID: {})", username, user.getUserId());
 
+            Map<String, Object> userInfo = new HashMap<>();
+            userInfo.put("userId", user.getUserId());
+            userInfo.put("username", user.getUsername());
+            userInfo.put("email", user.getEmail());
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "登录成功");
-            response.put("user", user);
+            response.put("user", userInfo);
+
+            logger.info("response: {}", response);
             return ResponseEntity.ok(response);
         } else {
             logger.warn("用户登录失败: {} - 用户名或密码错误", username);
