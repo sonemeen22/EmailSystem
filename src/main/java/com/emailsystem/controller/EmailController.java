@@ -5,6 +5,8 @@ import com.emailsystem.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +70,9 @@ public class EmailController {
         Integer emailId = (Integer) request.get("emailId");
         Integer userId = (Integer) request.get("userId");
         emailService.markAsRead(emailId, userId);
-        return ResponseEntity.ok("标记为已读");
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);  // 添加success字段
+        response.put("message", "标记为已读");
+        return ResponseEntity.ok(response);
     }
 }
