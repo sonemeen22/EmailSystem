@@ -9,6 +9,7 @@ import java.util.List;
 public class Email {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "email_id")  // 映射到数据库列名
     private Integer emailId;
     
     @ManyToOne

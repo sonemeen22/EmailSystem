@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")  // 映射到数据库列名
     private Integer userId;
     
     @Column(unique = true, nullable = false)

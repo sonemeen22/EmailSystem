@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class EmailAttachment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "attachment_id")  // 映射到数据库列名
     private Integer attachmentId;
     
     @ManyToOne
