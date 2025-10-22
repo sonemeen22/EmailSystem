@@ -33,16 +33,30 @@ public class EmailController {
             List<String> bccEmails = (List<String>) request.get("bcc");
             
             Email sentEmail = emailService.sendEmail(email, toEmails, ccEmails, bccEmails);
-            return ResponseEntity.ok(sentEmail);
+
+            Map<String, Object> EmailInfo = new HashMap<>();
+            EmailInfo.put("emailId", sentEmail.getEmailId());
+            EmailInfo.put("subject", sentEmail.getSubject());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "发送成功");
+            response.put("emailInfo", EmailInfo);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     
     @GetMapping("/inbox/{userId}")
-    public ResponseEntity<List<Email>> getInbox(@PathVariable Integer userId) {
+    public ResponseEntity<Map<String, Object>> getInbox(@PathVariable Integer userId) {
         List<Email> emails = emailService.getInbox(userId);
-        return ResponseEntity.ok(emails);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "收件箱");
+        response.put("emails", emails);
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/sent/{userId}")
