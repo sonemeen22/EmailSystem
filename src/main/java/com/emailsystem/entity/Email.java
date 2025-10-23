@@ -1,6 +1,7 @@
 package com.emailsystem.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -31,8 +32,9 @@ public class Email {
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime sendTime;
-    
+
     @Enumerated(EnumType.STRING)
+    @Column(name = "email_status")
     private EmailStatus status;
 
     @JsonSerialize(using = LocalDateTimeSerializer.class)
@@ -41,9 +43,11 @@ public class Email {
     private LocalDateTime createdAt;
     
     @OneToMany(mappedBy = "email", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<EmailRecipient> recipients;
     
     @OneToMany(mappedBy = "email", cascade = CascadeType.ALL)
+    @JsonIgnore
     private List<EmailAttachment> attachments;
     
     // getters and setters
