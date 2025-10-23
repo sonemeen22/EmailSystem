@@ -21,6 +21,32 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // 添加 findById 方法
+    public User findById(Integer userId) {
+        logger.info("根据ID查询用户，用户ID: {}", userId);
+
+        try {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                logger.info("用户查询成功，用户ID: {}, 用户名: {}", userId, user.getUsername());
+                return user;
+            } else {
+                logger.warn("用户不存在，用户ID: {}", userId);
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("查询用户过程中发生异常，用户ID: {}, 错误信息: {}", userId, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    // 也可以添加返回 Optional 的版本
+    public Optional<User> findByIdOptional(Integer userId) {
+        logger.info("根据ID查询用户(Optional)，用户ID: {}", userId);
+        return userRepository.findById(userId);
+    }
+
     public User register(User user) {
         logger.info("开始用户注册流程，用户名: {}, 邮箱: {}", user.getUsername(), user.getEmail());
 

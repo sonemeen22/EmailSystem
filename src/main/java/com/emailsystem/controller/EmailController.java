@@ -1,11 +1,15 @@
 package com.emailsystem.controller;
 
 import com.emailsystem.entity.Email;
+import com.emailsystem.entity.User;
 import com.emailsystem.service.EmailService;
+import com.emailsystem.service.UserService;
+import com.emailsystem.entity.EmailStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,13 +21,27 @@ public class EmailController {
     
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private UserService userService;
     
     @PostMapping("/send")
     public ResponseEntity<?> sendEmail(@RequestBody Map<String, Object> request) {
         try {
-            // 解析请求并发送邮件
-            Email email = new Email();
-            // 设置邮件属性...
+            // 解析请求参数 - 从sender对象中获取userId
+            Integer senderId = null;
+
+            // 检查请求中是否包含sender对象
+            if (request.containsKey("sender")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> senderMap = (Map<String, Object>) request.get("sender");
+                if (senderMap != null && senderMap.containsKey("userId")) {
+                    senderId = (Integer) senderMap.get("userId");
+                }
+            }
+
+            String subject = (String) request.get("subject");
+            String content = (String) request.get("content");
             
             @SuppressWarnings("unchecked")
             List<String> toEmails = (List<String>) request.get("to");
@@ -31,6 +49,24 @@ public class EmailController {
             List<String> ccEmails = (List<String>) request.get("cc");
             @SuppressWarnings("unchecked")
             List<String> bccEmails = (List<String>) request.get("bcc");
+
+            // 根据senderId获取用户信息
+            User sender = userService.findById(senderId);
+            if (sender == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "发送者不存在");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            // 创建邮件对象并设置属性
+            Email email = new Email();
+            email.setSender(sender);
+            email.setSubject(subject);
+            email.setContent(content);
+            email.setSendTime(LocalDateTime.now()); // 使用LocalDateTime
+            email.setCreatedAt(LocalDateTime.now()); // 设置创建时间
+            email.setStatus(EmailStatus.SENT); // 设置邮件状态为已发送
             
             Email sentEmail = emailService.sendEmail(email, toEmails, ccEmails, bccEmails);
 
