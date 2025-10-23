@@ -228,4 +228,48 @@ public class EmailController {
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
+
+    // 新增：获取邮件详情接口
+    @GetMapping("/{emailId}")
+    public ResponseEntity<?> getEmailDetail(@PathVariable("emailId") Integer emailId,
+                                            @RequestParam(value = "userId", required = false) Integer userId) {
+        logger.info("开始获取邮件详情, emailId: {}, userId: {}", emailId, userId);
+        long startTime = System.currentTimeMillis();
+
+        try {
+            Email email = emailService.getEmailById(emailId);
+            if (email == null) {
+                logger.warn("邮件不存在, emailId: {}", emailId);
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "邮件不存在");
+                return ResponseEntity.notFound().build();
+            }
+
+            logger.debug("成功获取邮件详情, emailId: {}, 主题: {}", emailId, email.getSubject());
+
+            // 如果有userId参数，可以记录用户查看邮件的操作（可选）
+            if (userId != null) {
+                logger.debug("用户查看邮件, userId: {}, emailId: {}", userId, emailId);
+                // 这里可以添加标记为已读的逻辑
+                // emailService.markAsRead(emailId, userId);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "获取邮件详情成功");
+            response.put("email", email);
+
+            long executionTime = System.currentTimeMillis() - startTime;
+            logger.info("获取邮件详情请求处理完成, 耗时: {}ms", executionTime);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取邮件详情时发生异常, emailId: {}", emailId, e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "获取邮件详情失败");
+            return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
 }

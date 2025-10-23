@@ -272,4 +272,24 @@ public class EmailService {
             throw e;
         }
     }
+
+    // 新增：根据邮件ID获取邮件详情
+    public Email getEmailById(Integer emailId) {
+        logger.info("根据ID获取邮件详情，邮件ID: {}", emailId);
+
+        try {
+            Email email = emailRepository.findById(emailId)
+                    .orElseThrow(() -> {
+                        logger.warn("邮件不存在，邮件ID: {}", emailId);
+                        return new RuntimeException("邮件不存在");
+                    });
+
+            logger.debug("成功获取邮件详情，邮件ID: {}, 主题: {}", emailId, email.getSubject());
+            return email;
+
+        } catch (Exception e) {
+            logger.error("获取邮件详情失败，邮件ID: {}, 错误: {}", emailId, e.getMessage(), e);
+            throw e;
+        }
+    }
 }
